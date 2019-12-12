@@ -6,7 +6,7 @@ from zc.buildout import UserError
 import pkg_resources
 import zc.recipe.egg
 
-from djangorecipe.boilerplate import WSGI_TEMPLATE
+from djangorecipe.boilerplate import WSGI_TEMPLATE, ASGI_TEMPLATE
 
 
 class Recipe(object):
@@ -56,6 +56,7 @@ class Recipe(object):
 
         # mod_wsgi support script
         options.setdefault('wsgi', 'false')
+        options.setdefault('asgi', 'false')
         options.setdefault('logfile', '')
 
         # respect relative-paths (from zc.recipe.egg)
@@ -86,6 +87,7 @@ class Recipe(object):
         script_paths.extend(self.create_manage_script(extra_paths, ws))
         script_paths.extend(self.create_test_runner(extra_paths, ws))
         script_paths.extend(self.make_wsgi_script(extra_paths, ws))
+        script_paths.extend(self.make_asgi_script(extra_paths, ws))
         script_paths += self.create_scripts_with_settings(
             extra_paths, ws)
         return script_paths
@@ -141,6 +143,35 @@ class Recipe(object):
                                                   self.name),
                                  'wsgi'),
                       'djangorecipe.binscripts', 'wsgi')],
+                    ws,
+                    sys.executable,
+                    self.options['bin-directory'],
+                    extra_paths=extra_paths,
+                    relative_paths=self._relative_paths,
+                    arguments="'%s', logfile='%s'" % (
+                        settings, self.options.get('logfile')),
+                    initialization=self.options['initialization'],
+                ))
+        zc.buildout.easy_install.script_template = _script_template
+        return scripts
+
+    def make_asgi_script(self, extra_paths, ws):
+        scripts = []
+        _script_template = zc.buildout.easy_install.script_template
+        settings = self.get_settings()
+        zc.buildout.easy_install.script_template = (
+            zc.buildout.easy_install.script_header +
+            ASGI_TEMPLATE +
+            self.options['deploy-script-extra']
+        )
+        if self.options.get('asgi', '').lower() == 'true':
+            scripts.extend(
+                zc.buildout.easy_install.scripts(
+                    [(self.options.get('asgi-script') or
+                      '%s.%s' % (self.options.get('control-script',
+                                                  self.name),
+                                 'asgi'),
+                      'djangorecipe.binscripts', 'asgi')],
                     ws,
                     sys.executable,
                     self.options['bin-directory'],
@@ -217,6 +248,7 @@ class Recipe(object):
         self.create_manage_script(extra_paths, ws)
         self.create_test_runner(extra_paths, ws)
         self.make_wsgi_script(extra_paths, ws)
+        self.make_asgi_script(extra_paths, ws)
 
     def create_file(self, filename, template, options):
         if os.path.exists(filename):

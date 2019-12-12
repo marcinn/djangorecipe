@@ -59,3 +59,9 @@ def wsgi(settings_file, logfile=None):
     # Run WSGI handler for the application
     from django.core.wsgi import get_wsgi_application
     return get_wsgi_application()
+
+
+def asgi(settings_file):
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_file)
+    from django.core.asgi import get_asgi_application
+    return get_asgi_application()
