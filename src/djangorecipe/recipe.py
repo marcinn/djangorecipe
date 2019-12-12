@@ -177,8 +177,7 @@ class Recipe(object):
                     self.options['bin-directory'],
                     extra_paths=extra_paths,
                     relative_paths=self._relative_paths,
-                    arguments="'%s', logfile='%s'" % (
-                        settings, self.options.get('logfile')),
+                    arguments="'%s'" % settings,
                     initialization=self.options['initialization'],
                 ))
         zc.buildout.easy_install.script_template = _script_template
